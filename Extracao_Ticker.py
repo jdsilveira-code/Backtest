@@ -4,7 +4,7 @@ import pandas as pd
 tickers = list()
 finais_desejados = ['3', '4', '5', '6', '11']
 
-with open('COTAHIST_A2015.TXT', 'r', encoding='utf-8') as arquivo:
+with open('dados/cotahist/COTAHIST_A2015.TXT', 'r', encoding='utf-8') as arquivo:
     for linha in arquivo:
         if '201501' in linha:
             ticker = linha[12:].split()[0].strip()
