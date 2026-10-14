@@ -1,20 +1,12 @@
-import re
 import pandas as pd
 
-tickers = list()
-finais_desejados = ['3', '4', '5', '6', '11']
+tickers = list()    
 
-with open('dados/cotahist/COTAHIST_A2015.TXT', 'r', encoding='utf-8') as arquivo:
+with open('dados/cotahist/COTAHIST_A2015.TXT', 'r', encoding='latin-1') as arquivo:
     for linha in arquivo:
-        if '201501' in linha:
-            ticker = linha[12:].split()[0].strip()
-            # Extrai apenas os dígitos finais do ticker
-            match = re.match(r'([A-Z]+)(\d+)$', ticker)
-            if match:
-                final = match.group(2)
-                if final in finais_desejados:
-                    if ticker not in tickers:
-                        tickers.append(ticker)
-                      
-novo_df = pd.DataFrame(tickers)
-novo_df.to_csv('banco.csv', mode='a', header=False, index=False)
+        if linha != "01":
+            continue
+        if len(linha[12:23].strip()) == 5:
+            tickers.append(linha[12:23].strip())     
+df = pd.DataFrame(tickers, columns=['ticker'])
+df.to_parquet('dados.parquet', engine='pyarrow', compression='snappy')
