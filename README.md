@@ -11,3 +11,8 @@ O algoritmo utiliza arquivos de dados que não são versionados (os `.csv` estã
 - **FCA** (CVM): formulário cadastral, em `dados/fca/`
 
 O layout do arquivo COTAHIST está em `docs/SeriesHistoricas_Layout.pdf`.
+
+
+1º passo: Limpar COTAHIST mas mantendo duplicidade, data, nome_empresa, preco_fechamento, volume, quantidade_negociada
+2º passo: vincular os tickers ao nome da empresa e cnpj
+3º passo: Extrair indicadores por data e ativo

@@ -1,22 +1,43 @@
 import pandas as pd
 from pathlib import Path
 
-dados_tickers = dict()
 pasta = Path("dados/cotahist")
 
+# CODBDI: 02 = lote padrão, 05 = regime especial/sanções, 08 = recuperação judicial
+CODBDI_ACOES = {"02", "05", "08"}
+
+registros = []
 for caminho in sorted(pasta.glob("*.TXT")):
-    tickers = set()
     with open(caminho, 'r', encoding='latin-1') as arquivo:
-        ano = next(arquivo)[11:15]
+        next(arquivo)  # header
         for linha in arquivo:
             if linha[:2] != "01":
                 continue
-            if linha[10:12] != "02":
+            codbdi = linha[10:12]
+            ticker = linha[12:24].strip()
+            if codbdi not in CODBDI_ACOES:
                 continue
-            if len(linha[12:24].strip()) == 5 or linha[16:18] == "11":
-                tickers.add(linha[12:24].strip())
-    dados_tickers[ano] = sorted(tickers)
+            if linha[24:27] != "010":  # TPMERC: apenas mercado à vista (exclui opções, termo, fracionário)
+                continue
+            if linha[39:42] == "IBO":  # ESPECI: exclui índice (IBOV11)
+                continue
+            if not (len(ticker) == 5 or ticker[4:6] == "11"):
+                continue
+            fatcot = int(linha[210:217])  # FATCOT: preços são cotados por lote de FATCOT ações
+            registros.append((
+                linha[2:10],
+                ticker,
+                codbdi,
+                linha[27:39].strip(),
+                int(linha[56:69]) / 100 / fatcot,   # PREABE
+                int(linha[69:82]) / 100 / fatcot,   # PREMAX
+                int(linha[82:95]) / 100 / fatcot,   # PREMIN
+                int(linha[108:121]) / 100 / fatcot, # PREULT
+                int(linha[152:170]),                # QUATOT: quantidade negociada
+                int(linha[170:188]) / 100,          # VOLTOT: volume financeiro
+            ))
 
-registros = [(ano, t) for ano, lista in dados_tickers.items() for t in lista]
-df = pd.DataFrame(registros, columns=["ano", "ticker"])
-df.to_parquet('tickers.parquet', engine='pyarrow', compression='snappy')
+df = pd.DataFrame(registros, columns=["data", "ticker", "codbdi", "nome", "abertura",
+                                      "maxima", "minima", "fechamento", "quantidade", "volume"])
+df["data"] = pd.to_datetime(df["data"], format="%Y%m%d")
+df.to_parquet('cotacoes.parquet', engine='pyarrow', compression='snappy')
